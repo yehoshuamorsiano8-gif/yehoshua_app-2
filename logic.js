@@ -1,218 +1,166 @@
-// --- LOGIC.JS: המוח המלא של מערכת יהושע ---
+// --- חלק 1: ניהול הניווט בין החלוניות ---
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
 
-let appData = JSON.parse(localStorage.getItem('yehoshua_data')) || {};
-
-// אתחול אובייקטים בסיסיים אם הם לא קיימים
-if (!appData.daily) appData.daily = {};
-if (!appData.units) appData.units = {};
-if (!appData.subUnits) appData.subUnits = {};
-
-// פונקציית אתחול
-function init() {
-    renderSections();
-    renderTorahSelector();
-    document.getElementById('mainDate').valueAsDate = new Date();
-    updateProgressUI();
-}
-
-// בניית 15 הסעיפים בדף הבית
-function renderSections() {
-    const cont = document.getElementById('dynamic-sections');
-    if(!cont) return;
-    cont.innerHTML = '';
-    SECTIONS_CONFIG.forEach(sec => {
-        let h = `<div class="section-header">סעיף ${sec.id}: ${sec.title}</div>`;
-        sec.fields.forEach(f => {
-            let isScale = f.includes('(סקאלה)') || sec.isScale;
-            let input = isScale ? `<input type="range" min="1" max="5" value="3" class="inp" data-name="${f}">` : `<input type="checkbox" class="inp" data-name="${f}">`;
-            if(f.includes('(זמן)')) input = `<input type="time" class="inp" data-name="${f}">`;
-            if(f.includes('(כמות)')) input = `<input type="number" class="inp" data-name="${f}" style="width:60px">`;
-            h += `<div class="field"><label>${f}</label>${input}</div>`;
-        });
-        cont.innerHTML += h;
-    });
-}
-
-// בניית תפריט הבחירה התורני
-function renderTorahSelector() {
-    const tCont = document.getElementById('torahContainer');
-    if(!tCont) return;
-    tCont.innerHTML = '';
-    Object.keys(TORAH_DB).forEach(cat => {
-        let h = `<div class="card" style="padding:10px; margin-bottom:10px; border:1px solid #ccc;">
-                    <div style="font-weight:bold; cursor:pointer; padding:5px;" onclick="toggleAcc(this)">${cat} ▾</div>
-                    <div class="acc-content" style="display:none; padding-top:10px;">
-                        <select onchange="loadUnits(this, '${cat}')" style="width:100%; padding:8px; margin-bottom:10px;"><option>בחר ספר...</option>`;
-        Object.keys(TORAH_DB[cat]).forEach(b => h += `<option value="${b}">${b}</option>`);
-        h += `</select><div class="units-grid"></div><div class="sub-unit-box"></div></div></div>`;
-        tCont.innerHTML += h;
-    });
-}
-
-function toggleAcc(el) {
-    const content = el.nextElementSibling;
-    content.style.display = content.style.display === 'none' ? 'block' : 'none';
-}
-
-// טעינת פרקים/דפים - ללא לחיצה כפולה
-function loadUnits(sel, cat) {
-    const bookName = sel.value;
-    const grid = sel.nextElementSibling;
-    const subBox = grid.nextElementSibling;
-    grid.innerHTML = '';
-    subBox.style.display = 'none';
+    document.getElementById(`tab-${tabId}`).classList.add('active');
     
-    const bookData = TORAH_DB[cat][bookName];
-    if (!bookData) return;
-
-    for (let i = 1; i <= bookData.ch; i++) {
-        let id = `${cat}_${bookName}_${i}`;
-        let item = document.createElement('div');
-        item.className = 'unit-item ' + (appData.units[id] ? 'checked' : '');
-        item.innerText = toGem(i);
-        
-        // לחיצה בודדת בלבד - פותחת/סוגרת את פירוט הפסוקים
-        item.onclick = () => {
-            if (subBox.dataset.currentId === id && subBox.style.display === 'block') {
-                subBox.style.display = 'none';
-            } else {
-                renderSubUnits(subBox, id, bookName, i, item, bookData, cat);
-                subBox.dataset.currentId = id;
-            }
-        };
-        grid.appendChild(item);
-    }
+    // סימון הכפתור הנכון בתפריט (מטפל בלחיצה ישירה)
+    const activeBtn = Array.from(document.querySelectorAll('.nav-item'))
+                           .find(btn => btn.getAttribute('onclick').includes(tabId));
+    if (activeBtn) activeBtn.classList.add('active');
 }
 
-// הצגת ריבועי פסוקים/משניות עם כפתור "סמן הכל"
-function renderSubUnits(subBox, parentId, bookName, chapterNum, parentEl, bookData, cat) {
-    subBox.style.display = 'block';
+// --- חלק 2: ניהול הסטורי והדיווח היומי ---
+let currentContext = 'normal';
+let currentStep = 0;
+let userEntries = {};
+
+// הגדרת הקשר יומי (מופעל מכפתורי הפתיחה ב-HTML)
+function setContext(contextType) {
+    currentContext = contextType;
+    console.log(`הקשר יומי: ${contextType}`);
     
-    let vCount = 15; 
-    if (bookData.v) {
-        const vArray = bookData.v.split(',').map(Number);
-        vCount = vArray[chapterNum - 1] || 15;
-    } else if (cat === "גמרא") {
-        vCount = 2; 
+    document.getElementById('context-opener').classList.remove('active');
+    startStory();
+}
+
+function startStory() {
+    currentStep = 0;
+    userEntries = {};
+    renderStep();
+}
+
+// פונקציית הציור של הכרטיסים (Render)
+function renderStep() {
+    const container = document.getElementById('story-container');
+    container.innerHTML = ''; 
+
+    // בדיקה אם עברנו את כל המדדים שמוגדרים ב-architect.js
+    if (currentStep >= architectConfig.metrics.length) {
+        showReviewSummary();
+        return;
     }
 
-    subBox.innerHTML = `
-        <div style="margin-top:10px; padding:15px; background:#f8f9fa; border:2px solid var(--accent); border-radius:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <strong>${bookName} - ${cat === "גמרא" ? 'דף' : 'פרק'} ${toGem(chapterNum)}:</strong>
-                <button onclick="markAllInChapter('${parentId}', ${vCount}, this)" style="padding:5px 10px; cursor:pointer; background:var(--primary); color:white; border:none; border-radius:5px; font-size:0.8em;">סמן את כל הפרק כבוצע</button>
+    const metric = architectConfig.metrics[currentStep];
+    const card = document.createElement('div');
+    card.className = 'story-card active';
+
+    // יצירת ממשק הקלט לפי סוג המדד
+    let inputHTML = '';
+    if (metric.type === 'v') {
+        inputHTML = `<button class="v-btn" onclick="saveEntry('${metric.id}', 1)">✅</button>`;
+    } else if (metric.type === 'slider') {
+        inputHTML = `
+            <input type="range" min="${metric.min}" max="${metric.max}" value="0" 
+                   class="custom-slider" id="input-${metric.id}" 
+                   oninput="document.getElementById('val-${metric.id}').innerText = this.value">
+            <div id="val-${metric.id}" style="font-size: 2rem; margin: 10px;">0</div>
+            <button class="next-btn" onclick="saveEntryFromInput('${metric.id}')">המשך</button>
+        `;
+    } else if (metric.type === 'stepper') {
+        inputHTML = `
+            <div class="stepper">
+                <button class="step-btn" onclick="updateStepper('${metric.id}', -1)">-</button>
+                <span id="step-val-${metric.id}" style="font-size:2rem; min-width: 60px;">0</span>
+                <button class="step-btn" onclick="updateStepper('${metric.id}', 1)">+</button>
             </div>
-            <div class="units-grid"></div>
-        </div>`;
-    
-    const subGrid = subBox.querySelector('.units-grid');
-    for(let j = 1; j <= vCount; j++) {
-        let subId = `${parentId}_${j}`;
-        let label = (cat === "גמרא") ? (j === 1 ? 'א' : 'ב') : j;
-        
-        let subItem = document.createElement('div');
-        subItem.className = 'unit-item ' + (appData.subUnits[subId] ? 'checked' : '');
-        subItem.innerText = label;
-        subItem.style.background = "white";
-        
-        subItem.onclick = (e) => {
-            e.stopPropagation();
-            appData.subUnits[subId] = !appData.subUnits[subId];
-            subItem.classList.toggle('checked');
-            
-            // עדכון הסטטוס של הפרק הראשי בהתאם
-            checkIfChapterComplete(parentId, vCount, parentEl);
-            saveToLoc();
-        };
-        subGrid.appendChild(subItem);
+            <button class="next-btn" onclick="saveEntryFromStepper('${metric.id}')" style="margin-top:20px;">המשך</button>
+        `;
     }
+
+    card.innerHTML = `
+        <div class="card-header">
+            <span class="domain-tag" style="background:#eee; padding:5px 10px; border-radius:10px; font-size:0.8rem;">${metric.domain}</span>
+            <h2 style="margin-top:10px;">${metric.label}</h2>
+        </div>
+        <div class="input-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            ${inputHTML}
+        </div>
+        <div class="card-footer" style="margin-top:20px;">
+            <button class="skip-btn" onclick="saveEntry('${metric.id}', 0)" style="background:none; border:1px solid #ddd; padding:10px; border-radius:10px; cursor:pointer;">לא רלוונטי היום</button>
+            <div style="margin-top:15px; color:#888; font-size:0.8rem;">משימה ${currentStep + 1} מתוך ${architectConfig.metrics.length}</div>
+        </div>
+    `;
+
+    container.appendChild(card);
 }
 
-// פונקציית עזר לסימון כל הפרק
-function markAllInChapter(parentId, vCount, btn) {
-    appData.units[parentId] = true;
-    for(let j = 1; j <= vCount; j++) {
-        appData.subUnits[`${parentId}_${j}`] = true;
-    }
-    // רענון התצוגה
-    const parentEl = document.querySelector(`.unit-item[innertext="${parentId.split('_').pop()}"]`); // הערה: זה יצטרך זיהוי מדויק יותר אם יש כפילויות
-    location.reload(); // הדרך הפשוטה לוודא שהכל התעדכן ויזואלית
-    saveToLoc();
+// --- חלק 3: פונקציות עזר לשמירה ועדכון ---
+
+function saveEntry(id, value) {
+    userEntries[id] = value;
+    currentStep++;
+    renderStep();
 }
 
-// בדיקה אם כל הפסוקים סומנו ואז סימון הפרק הראשי
-function checkIfChapterComplete(parentId, vCount, parentEl) {
-    let allDone = true;
-    for(let j = 1; j <= vCount; j++) {
-        if(!appData.subUnits[`${parentId}_${j}`]) {
-            allDone = false;
-            break;
+function saveEntryFromInput(id) {
+    const val = document.getElementById(`input-${id}`).value;
+    saveEntry(id, val);
+}
+
+function updateStepper(id, delta) {
+    const el = document.getElementById(`step-val-${id}`);
+    let current = parseInt(el.innerText);
+    el.innerText = Math.max(0, current + delta);
+}
+
+function saveEntryFromStepper(id) {
+    const val = parseInt(document.getElementById(`step-val-${id}`).innerText);
+    saveEntry(id, val);
+}
+
+async function showReviewSummary() {
+    const container = document.getElementById('story-container');
+    const today = new Date().toLocaleDateString('he-IL');
+
+    // יצירת הרשומה
+    const dayRecord = {
+        date: today,
+        context: currentContext,
+        entries: userEntries,
+        timestamp: new Date().getTime()
+    };
+
+    // שמירה מקומית
+    LegacyData.saveDay(today, currentContext, userEntries);
+
+    // הצגת הודעת טעינה
+    container.innerHTML = `<div class="story-card active"><h2>מסנכרן לענן... ☁️</h2></div>`;
+
+    try {
+        // סנכרון לענן (cloud.js)
+        await LegacyCloud.syncToCloud(dayRecord);
+
+        container.innerHTML = `
+            <div class="story-card active">
+                <h2>סונכרן בהצלחה! ✅</h2>
+                <p>הנתונים עודכנו ב"גוגל דוקס" האישי שלך.</p>
+                <button class="next-btn" onclick="switchTab('feedback')" style="padding:15px 30px; background:#2ecc71; color:white; border:none; border-radius:10px; font-size:1.1rem; cursor:pointer; margin-top:20px;">עבור לגרפים</button>
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = `<div class="story-card active"><h2>שגיאת סנכרון ❌</h2><p>הנתונים נשמרו רק מקומית.</p></div>`;
+    }
+}
+function renderFeedback() {
+    const history = LegacyData.getHistory();
+    if (history.length === 0) return;
+
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    const latestScore = history[history.length - 1].entries;
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: architectConfig.metrics.map(m => m.label),
+            datasets: [{
+                label: 'ביצועים נוכחיים',
+                data: architectConfig.metrics.map(m => latestScore[m.id] || 0),
+                fill: true,
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                borderColor: 'rgb(52, 152, 219)',
+            }]
         }
-    }
-    appData.units[parentId] = allDone;
-    if(allDone) parentEl.classList.add('checked');
-    else parentEl.classList.remove('checked');
-}
-
-function toGem(n) {
-    const l = {400:'ת',300:'ש',200:'ר',100:'ק',90:'צ',80:'פ',70:'ע',60:'ס',50:'נ',40:'מ',30:'ל',20:'כ',10:'י',9:'ט',8:'ח',7:'ז',6:'ו',5:'ה',4:'ד',3:'ג',2:'ב',1:'א'};
-    let r = ""; if (n === 15) return "טו"; if (n === 16) return "טז";
-    for (let v of Object.keys(l).sort((a,b)=>b-a)) { while (n >= v) { r += l[v]; n -= v; } } return r;
-}
-
-function saveToLoc() { localStorage.setItem('yehoshua_data', JSON.stringify(appData)); }
-
-function saveData() {
-    const date = document.getElementById('mainDate').value;
-    if(!date) { alert("בחר תאריך"); return; }
-    let score = 0;
-    document.querySelectorAll('.inp').forEach(el => {
-        if (el.type === 'checkbox' && el.checked) score += 10;
-        else if (el.type === 'range') score += parseInt(el.value);
-    });
-    appData.daily[date] = score;
-    saveToLoc();
-    alert("נשמר במערכת יהושע!");
-}
-
-function showTab(id) {
-    document.querySelectorAll('.tab-content, .nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelector(`[onclick="showTab('${id}')"]`).classList.add('active');
-    if(id === 'insight-tab') updateProgressUI();
-}
-
-// עדכון סרגלי התקדמות
-function updateProgressUI() {
-    const progCont = document.getElementById('torahProgressBars');
-    if(!progCont) return;
-    progCont.innerHTML = '';
-    Object.keys(TORAH_DB).forEach(cat => {
-        let total = 0, done = 0;
-        Object.keys(TORAH_DB[cat]).forEach(book => {
-            total += TORAH_DB[cat][book].ch;
-            for(let i=1; i<=TORAH_DB[cat][book].ch; i++) {
-                if(appData.units[`${cat}_${book}_${i}`]) done++;
-            }
-        });
-        let pct = Math.round((done / total) * 100) || 0;
-        progCont.innerHTML += `<div><strong>${cat}: ${pct}%</strong><div class="progress-bar-container"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
-    });
-    renderChart();
-}
-
-function renderChart() {
-    const canvas = document.getElementById('chartJS');
-    if(!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const dates = Object.keys(appData.daily).sort();
-    const vals = dates.map(d => appData.daily[d]);
-    if(chartObj) chartObj.destroy();
-    chartObj = new Chart(ctx, {
-        type: 'line',
-        data: { labels: dates, datasets: [{ label: 'ציון יומי', data: vals, borderColor: '#c5a059', fill: true, backgroundColor: 'rgba(197,160,89,0.1)' }] },
-        options: { responsive: true, maintainAspectRatio: false }
     });
 }
-
-window.onload = init;
