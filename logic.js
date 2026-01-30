@@ -215,3 +215,65 @@ function renderArchitectView() {
         </div>`;
     container.appendChild(deleteBtn);
 }
+// עדכון פונקציית הניווט - הוספת קריאה לאדריכל
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    
+    const activeBtn = Array.from(document.querySelectorAll('.nav-item'))
+                           .find(btn => btn.getAttribute('onclick').includes(tabId));
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // הרצת פונקציות ספציפיות לפי החלונית
+    if (tabId === 'feedback') renderFeedback();
+    if (tabId === 'architect') renderArchitectView(); // יצירת התצוגה בזמן אמת
+}
+
+// פונקציה חדשה: בניית תצוגת האדריכל
+function renderArchitectView() {
+    const container = document.getElementById('tab-architect');
+    // ניקוי ראשוני והוספת כותרת
+    container.innerHTML = `
+        <div style="padding: 10px;">
+            <h2>ניהול האדריכל</h2>
+            <p style="color: #666; font-size: 0.9rem;">כאן מוגדרים המדדים שמרכיבים את ה-Legacy שלך.</p>
+        </div>
+    `;
+
+    // בניית כרטיס לכל מדד שקיים ב-architect.js
+    architectConfig.metrics.forEach(m => {
+        const card = document.createElement('div');
+        card.style = `
+            background: #fff;
+            border-right: 5px solid ${m.isBonus ? '#2ecc71' : '#3498db'};
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: right;
+        `;
+        card.innerHTML = `
+            <div style="font-weight: bold; font-size: 1.1rem;">${m.label}</div>
+            <div style="font-size: 0.85rem; color: #777; margin: 4px 0;">תחום: ${m.domain} | משקל: ${m.weight}</div>
+            <div style="font-size: 0.8rem;">
+                סוג קלט: <span style="background: #eee; padding: 2px 6px; border-radius: 4px;">${m.type}</span>
+                ${m.isBonus ? '<span style="color: #2ecc71; margin-right: 10px;">★ מדד בונוס</span>' : ''}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    // הוספת כפתור המחיקה המאובטח (סעיף 9 באפיון)
+    const adminBox = document.createElement('div');
+    adminBox.style = "margin-top: 40px; padding: 20px; border-top: 2px dashed #ffcccc; background: #fff5f5; border-radius: 10px;";
+    adminBox.innerHTML = `
+        <h4 style="color: #e74c3c; margin-top: 0;">אזור אבטחה</h4>
+        <p style="font-size: 0.8rem;">פעולות אלו משפיעות ישירות על ה-Cloud Firestore.</p>
+        <button onclick="LegacyCloud.secureDeleteAll()" style="background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold;">
+            מחיקת כל הנתונים מהענן (Safe Delete)
+        </button>
+    `;
+    container.appendChild(adminBox);
+}
