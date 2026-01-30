@@ -50,8 +50,19 @@
             </div>  
 
             <section id="tab-strategist" class="tab-content"><h2>האסטרטג</h2></section>
-            <section id="tab-museum" class="tab-content"><h2>ספריית הישגים</h2></section>
             
+            <section id="tab-museum" class="tab-content"><h2>ספריית הישגים</h2></section>
+             <div id="tab-architect" class="tab-content">
+                <div class="mode-selector-container" style="padding: 15px; background: #fff; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                  <h3 style="margin-top: 0;">ניהול מצבי חיים ⚙️</h3>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                 <button class="mode-btn active" onclick="setLifeMode('routine')" style="padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;">🏠 שגרה</button>
+                 <button class="mode-btn" onclick="setLifeMode('busy')" style="padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;">📚 עומס</button>
+                 <button class="mode-btn" onclick="setLifeMode('vacation')" style="padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;">🏖️ חופשה</button>
+                 <button class="mode-btn" onclick="setLifeMode('emergency')" style="padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;">🎖️ מילואים</button>
+                </div>
+                </div>
+             </div>
             <section id="tab-architect" class="tab-content">
                 <h2>האדריכל</h2>
                 <div class="admin-controls" style="margin-top: 50px; padding: 20px; border: 1px dashed red;">

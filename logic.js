@@ -5,6 +5,15 @@ let currentContext = 'normal';
 let currentStep = 0;
 let userEntries = {};
 let myTrendChart = null;
+let currentLifeMode = localStorage.getItem('activeLifeMode') || 'routine';
+
+// הגדרת המצבים (מבוסס על האפיון שלך)
+const lifeModes = {
+    routine: { label: "שגרה", disabledMetrics: [] },
+    busy: { label: "עומס/מבחנים", disabledMetrics: ['leisure-time'] },
+    vacation: { label: "חופשה", disabledMetrics: ['work-tasks', 'daily-study'] },
+    emergency: { label: "מילואים/חירום", disabledMetrics: ['work-tasks', 'social-life'] }
+};
 
 // פונקציית ניווט
 function switchTab(tabId) {
@@ -304,5 +313,40 @@ window.onload = async () => {
             ${trendMsg}
         </div>
     `;
+}
+// פונקציה לשינוי מצב חיים
+function setLifeMode(modeId) {
+    currentLifeMode = modeId;
+    localStorage.setItem('activeLifeMode', modeId);
+    
+    // עדכון ויזואלי של הכפתורים
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(modeId));
+    });
+
+    // הודעה מהאסטרטג
+    alert(`המערכת עברה למצב: ${lifeModes[modeId].label}. השאלון והמשקולות עודכנו.`);
+    
+    // רענון התצוגה של האדריכל/משוב אם פתוחים
+    if (document.getElementById('tab-feedback').classList.contains('active')) renderFeedback();
+}
+
+// עדכון פונקציית ה-renderStep (החלף את הלוגיקה הקודמת שמחליטה איזה מטריקה להציג)
+function renderStep() {
+    const container = document.getElementById('story-container');
+    if (!container) return;
+
+    // סינון מדדים לפי Life Mode
+    const activeMetrics = architectConfig.metrics.filter(m => 
+        !lifeModes[currentLifeMode].disabledMetrics.includes(m.id)
+    );
+
+    if (currentStep >= activeMetrics.length) {
+        showReviewSummary();
+        return;
+    }
+
+    const metric = activeMetrics[currentStep];
+    // ... המשך פונקציית ה-renderStep כפי שהייתה מקודם ...
 }
 };
