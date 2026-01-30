@@ -12,8 +12,8 @@ const firebaseConfig = {
   projectId: "yehoshua-system",
   storageBucket: "yehoshua-system.firebasestorage.app",
   messagingSenderId: "233499815606",
-  appId: "1:233499815606:web:1445807090092403f3c017",
-  measurementId: "G-2CFNKDHPE8"
+  appId: "1:233499815606:web:d302a0797a11635ff3c017",
+  measurementId: "G-ZM2F0GSBMN"
 };
 
 // Initialize Firebase
