@@ -195,3 +195,31 @@ function renderFeedback() {
         }
     });
 }
+function renderArchitectView() {
+    const container = document.getElementById('tab-architect');
+    // מנקים את החלונית (פרט לכפתור המחיקה)
+    container.innerHTML = '<h2>האדריכל - מבנה המערכת</h2>';
+
+    architectConfig.metrics.forEach(metric => {
+        const card = document.createElement('div');
+        card.style = "background:#fff; border:1px solid #ddd; margin:10px 0; padding:15px; border-radius:10px; text-align:right; border-right: 5px solid var(--primary);";
+        card.innerHTML = `
+            <div style="font-weight:bold; color:var(--primary);">${metric.domain}</div>
+            <div style="font-size:1.2rem; margin:5px 0;">${metric.label}</div>
+            <div style="font-size:0.8rem; color:#666;">
+                סוג: ${metric.type} | משקל: ${metric.weight} | 
+                ${metric.isBonus ? '<span style="color:green;">בונוס</span>' : '<span style="color:red;">בסיס</span>'}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    // מחזירים את כפתור המחיקה המאובטח בסוף
+    const deleteBtn = document.createElement('div');
+    deleteBtn.innerHTML = `
+        <div style="margin-top:30px; padding:15px; border:1px dashed red; border-radius:10px;">
+            <p>ניהול נתונים מתקדם:</p>
+            <button onclick="LegacyCloud.secureDeleteAll()" style="background:red; color:white; border:none; padding:10px; border-radius:5px;">מחיקת כל הנתונים מהענן</button>
+        </div>`;
+    container.appendChild(deleteBtn);
+}
