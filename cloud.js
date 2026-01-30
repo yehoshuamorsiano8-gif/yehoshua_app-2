@@ -1,11 +1,10 @@
-// שימוש בפורמט Compat - ללא import!
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY", // כאן תזין את המפתח שלך
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_ID",
-    appId: "Yehoshua-System"
+    apiKey: "AIzaSy...", // המפתח הארוך שלך
+    authDomain: "your-app.firebaseapp.com",
+    projectId: "your-project-id", // ה-ID האמיתי של הפרויקט
+    storageBucket: "your-app.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
 };
 
 // אתחול פיירבייס
