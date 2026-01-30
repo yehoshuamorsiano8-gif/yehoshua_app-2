@@ -18,7 +18,10 @@ function switchTab(tabId) {
                            .find(btn => btn.getAttribute('onclick')?.includes(tabId));
     if (activeBtn) activeBtn.classList.add('active');
 
-    if (tabId === 'feedback') renderFeedback();
+    if (tabId === 'feedback') {
+        renderFeedback();
+        runStrategist(); // הפעלה של האסטרטג בכל כניסה למשוב
+    }
     if (tabId === 'architect') renderArchitectView();
 }
 
@@ -256,4 +259,50 @@ window.onload = async () => {
     } catch (e) {
         console.warn("Legacy System: Offline mode.");
     }
+    function runStrategist() {
+    const history = LegacyData.getHistory();
+    const insightElement = document.getElementById('insight-text');
+    if (!insightElement || history.length === 0) return;
+
+    const latest = history[history.length - 1].entries;
+    const metrics = architectConfig.metrics;
+
+    // 1. זיהוי נקודת חוזק (הציון הכי גבוה)
+    let bestMetric = metrics[0];
+    metrics.forEach(m => {
+        if ((latest[m.id] || 0) > (latest[bestMetric.id] || 0)) bestMetric = m;
+    });
+
+    // 2. חישוב מגמה בהשוואה ליום הקודם
+    let trendMsg = "ברוך הבא למסע! המשך לדווח כדי שאוכל לזהות מגמות.";
+    if (history.length > 1) {
+        const prev = history[history.length - 2].entries;
+        
+        // חישוב ממוצעים פשוטים
+        const calcAvg = (entryObj) => {
+            const vals = Object.values(entryObj);
+            return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+        };
+
+        const latestAvg = calcAvg(latest);
+        const prevAvg = calcAvg(prev);
+        const diff = (latestAvg - prevAvg).toFixed(1);
+
+        if (diff > 0.5) trendMsg = `📈 המגמה בשיפור! עלית ב-${diff} נקודות מהדיווח הקודם.`;
+        else if (diff < -0.5) trendMsg = `📉 שים לב, יש ירידה של ${Math.abs(diff)} נקודות. מה ניתן לשפר מחר?`;
+        else trendMsg = "📊 המצב יציב. עקביות היא המפתח ל-Legacy.";
+    }
+
+    // 3. הזרקה לממשק
+    insightElement.innerHTML = `
+        <div style="margin-bottom: 10px;">
+            <span style="background: #f1c40f; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">ניתוח יומי</span><br>
+            היום הצטיינת ב<strong>"${bestMetric.label}"</strong>. שמירה על עקביות כאן תבנה תשתית חזקה.
+        </div>
+        <div>
+            <span style="background: #3498db; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">מגמת על</span><br>
+            ${trendMsg}
+        </div>
+    `;
+}
 };
