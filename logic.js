@@ -1,19 +1,42 @@
-// --- חלק 1: ניהול הניווט והפעלה ראשונית ---
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
 
     document.getElementById(`tab-${tabId}`).classList.add('active');
     
-    // סימון הכפתור הנכון בתפריט
     const activeBtn = Array.from(document.querySelectorAll('.nav-item'))
                            .find(btn => btn.getAttribute('onclick').includes(tabId));
     if (activeBtn) activeBtn.classList.add('active');
 
-    // אם עברנו למשוב - נרענן את הגרף
+    // ניהול תצוגות מיוחדות
     if (tabId === 'feedback') {
         renderFeedback();
+    } else if (tabId === 'architect') {
+        renderArchitectView(); // פונקציה חדשה
     }
+}
+
+// פונקציה חדשה להצגת המדדים בחלונית האדריכל
+function renderArchitectView() {
+    const container = document.getElementById('tab-architect');
+    // שומרים על כפתור המחיקה שהיה שם, ומוסיפים את רשימת המדדים
+    const adminControls = container.querySelector('.admin-controls');
+    
+    let metricsHTML = `<h3>מדדים פעילים במערכת</h3><ul style="list-style:none; padding:0;">`;
+    architectConfig.metrics.forEach(m => {
+        metricsHTML += `
+            <li style="background:#f4f4f4; margin:10px 0; padding:10px; border-right:4px solid var(--primary); border-radius:5px;">
+                <strong>${m.label}</strong> (${m.domain})<br>
+                <small>סוג: ${m.type} | משקל בסיס: ${m.weight}</small>
+            </li>`;
+    });
+    metricsHTML += `</ul>`;
+
+    // הזרקה לדף - מעל כפתור המחיקה
+    const listDiv = document.getElementById('metrics-list') || document.createElement('div');
+    listDiv.id = 'metrics-list';
+    listDiv.innerHTML = metricsHTML;
+    container.insertBefore(listDiv, adminControls);
 }
 
 // הפעלה אוטומטית בטעינת הדף (מושך נתונים מהענן)
