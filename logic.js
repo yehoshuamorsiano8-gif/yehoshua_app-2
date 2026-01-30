@@ -277,3 +277,44 @@ function renderArchitectView() {
     `;
     container.appendChild(adminBox);
 }
+let currentRange = 'today';
+
+function updateFeedbackRange(range) {
+    currentRange = range;
+    // עדכון ויזואלי של הכפתורים
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.includes(range === 'today' ? 'היום' : range === 'week' ? 'שבוע' : 'חודש'));
+    });
+    renderFeedback();
+}
+
+// עדכון פונקציית renderFeedback הקיימת או החלפתה
+function renderFeedback() {
+    const history = JSON.parse(localStorage.getItem('legacy_history') || '[]');
+    if (history.length === 0) return;
+
+    let dataToShow;
+    const now = new Date();
+
+    if (currentRange === 'today') {
+        dataToShow = history[history.length - 1].scores;
+    } else {
+        // חישוב ממוצע שבועי או חודשי
+        const daysToInclude = currentRange === 'week' ? 7 : 30;
+        const recentDays = history.slice(-daysToInclude);
+        
+        dataToShow = {};
+        // אתחול ממוצעים
+        architectConfig.metrics.forEach(m => {
+            if (!dataToShow[m.domain]) dataToShow[m.domain] = 0;
+        });
+
+        recentDays.forEach(day => {
+            for (let domain in day.scores) {
+                dataToShow[domain] += day.scores[domain] / recentDays.length;
+            }
+        });
+    }
+
+    drawRadarChart(dataToShow);
+}
