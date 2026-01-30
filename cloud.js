@@ -1,69 +1,21 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSy...", // המפתח הארוך שלך
-    authDomain: "your-app.firebaseapp.com",
-    projectId: "your-project-id", // ה-ID האמיתי של הפרויקט
-    storageBucket: "your-app.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyCByvoHlq6K8UZmfO5MoYSjSA5DwJWaDn4",
+  authDomain: "yehoshua-system.firebaseapp.com",
+  projectId: "yehoshua-system",
+  storageBucket: "yehoshua-system.firebasestorage.app",
+  messagingSenderId: "233499815606",
+  appId: "1:233499815606:web:1445807090092403f3c017",
+  measurementId: "G-2CFNKDHPE8"
 };
 
-// אתחול פיירבייס
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
-
-const LegacyCloud = {
-    // סנכרון יום בודד לענן
-    syncToCloud: async function(dayRecord) {
-        try {
-            // הפיכת התאריך למזהה מסמך חוקי (ללא לוכסנים)
-            const docId = dayRecord.date.replace(/\//g, "-");
-            await db.collection("days").doc(docId).set(dayRecord);
-            console.log("Legacy Sync: הצלחה");
-        } catch (error) {
-            console.error("Legacy Sync Error:", error);
-            throw error;
-        }
-    },
-
-    // משיכת כל ההיסטוריה לסנכרון מכשירים
-    pullFromCloud: async function() {
-        try {
-            const snapshot = await db.collection("days").orderBy("timestamp", "asc").get();
-            const history = snapshot.docs.map(doc => doc.data());
-            
-            if (history.length > 0) {
-                localStorage.setItem('legacy_history', JSON.stringify(history));
-                console.log("Legacy Cloud: הנתונים עודכנו מהענן");
-            }
-            return history;
-        } catch (error) {
-            console.error("Cloud Pull Error:", error);
-            return [];
-        }
-    },
-
-    // מימוש סעיף 9 באפיון: מנגנון מחיקה מאובטח
-    secureDeleteAll: async function() {
-        const confirmation = prompt("פרוטוקול אבטחה: הקלד 'DELETE' למחיקה סופית של כל נתוני ה-Legacy מהענן:");
-        
-        if (confirmation === "DELETE") {
-            try {
-                const snapshot = await db.collection("days").get();
-                const batch = db.batch();
-                snapshot.docs.forEach((doc) => {
-                    batch.delete(doc.ref);
-                });
-                await batch.commit();
-                localStorage.clear();
-                alert("המחיקה הושלמה. המערכת תתאפס.");
-                window.location.reload();
-            } catch (error) {
-                alert("שגיאה בתהליך המחיקה.");
-            }
-        } else {
-            alert("המחיקה בוטלה. הנתונים מוגנים.");
-        }
-    }
-};
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
