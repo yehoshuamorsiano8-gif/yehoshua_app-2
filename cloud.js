@@ -1,11 +1,4 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// שימוש בפורמט Compat עם המפתחות האמיתיים שלך
 const firebaseConfig = {
   apiKey: "AIzaSyCByvoHlq6K8UZmfO5MoYSjSA5DwJWaDn4",
   authDomain: "yehoshua-system.firebaseapp.com",
@@ -16,6 +9,38 @@ const firebaseConfig = {
   measurementId: "G-ZM2F0GSBMN"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// אתחול פיירבייס (בדיקה שלא אותחל כבר)
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
+const LegacyCloud = {
+    // סנכרון יום בודד לענן
+    syncToCloud: async function(dayRecord) {
+        try {
+            const docId = dayRecord.date.replace(/\//g, "-");
+            // שימוש ב-db (Firestore) שאתחלנו למעלה
+            await db.collection("days").doc(docId).set(dayRecord);
+            console.log("Legacy Sync: הצלחה לפרויקט yehoshua-system");
+            return true;
+        } catch (error) {
+            console.error("Legacy Sync Error:", error);
+            throw error;
+        }
+    },
+
+    pullFromCloud: async function() {
+        try {
+            const snapshot = await db.collection("days").orderBy("timestamp", "asc").get();
+            const history = snapshot.docs.map(doc => doc.data());
+            if (history.length > 0) {
+                localStorage.setItem('legacy_history', JSON.stringify(history));
+            }
+            return history;
+        } catch (error) {
+            console.error("Cloud Pull Error:", error);
+            return [];
+        }
+    }
+};
