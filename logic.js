@@ -1,11 +1,11 @@
-// --- חלק 1: ניהול מצב ומשתנים גלובליים ---
+// --- חלק 1: הגדרות יסוד (חייב להישאר בראש הקובץ) ---
+let currentRange = 'today'; 
 let myRadarChart = null; 
-let currentRange = 'today';
 let currentContext = 'normal';
 let currentStep = 0;
 let userEntries = {};
 
-// פונקציית ניווט מרכזית
+// פונקציית ניווט
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
@@ -17,12 +17,11 @@ function switchTab(tabId) {
                            .find(btn => btn.getAttribute('onclick')?.includes(tabId));
     if (activeBtn) activeBtn.classList.add('active');
 
-    // הפעלת פונקציות ספציפיות לפי החלונית
     if (tabId === 'feedback') renderFeedback();
     if (tabId === 'architect') renderArchitectView();
 }
 
-// --- חלק 2: ניהול הסטורי (הדיווח היומי) ---
+// --- חלק 2: ניהול הסטורי (דיווח יומי) ---
 function setContext(contextType) {
     currentContext = contextType;
     document.getElementById('context-opener').classList.remove('active');
@@ -51,7 +50,7 @@ function renderStep() {
 
     let inputHTML = '';
     if (metric.type === 'v') {
-        inputHTML = `<button class="v-btn" onclick="saveEntry('${metric.id}', 1)" style="font-size:3rem; cursor:pointer; background:none; border:none;">✅</button>`;
+        inputHTML = `<button class="v-btn" onclick="saveEntry('${metric.id}', 1)" style="font-size:3rem; cursor:pointer;">✅</button>`;
     } else if (metric.type === 'slider') {
         inputHTML = `
             <input type="range" min="${metric.min || 0}" max="${metric.max || 10}" value="0" 
@@ -63,9 +62,9 @@ function renderStep() {
     } else if (metric.type === 'stepper') {
         inputHTML = `
             <div class="stepper" style="display:flex; align-items:center; gap:20px;">
-                <button class="step-btn" onclick="updateStepper('${metric.id}', -1)" style="font-size:2rem; width:50px;">-</button>
+                <button class="step-btn" onclick="updateStepper('${metric.id}', -1)">-</button>
                 <span id="step-val-${metric.id}" style="font-size:2.5rem; min-width: 60px; text-align:center;">0</span>
-                <button class="step-btn" onclick="updateStepper('${metric.id}', 1)" style="font-size:2rem; width:50px;">+</button>
+                <button class="step-btn" onclick="updateStepper('${metric.id}', 1)">+</button>
             </div>
             <button class="next-btn" onclick="saveEntryFromStepper('${metric.id}')" style="margin-top:25px;">המשך</button>
         `;
@@ -73,15 +72,15 @@ function renderStep() {
 
     card.innerHTML = `
         <div class="card-header">
-            <span class="domain-tag" style="background:#3498db; color:white; padding:5px 15px; border-radius:15px; font-size:0.9rem;">${metric.domain}</span>
-            <h2 style="margin-top:15px; font-size:1.8rem;">${metric.label}</h2>
+            <span class="domain-tag" style="background:#3498db; color:white; padding:5px 15px; border-radius:15px;">${metric.domain}</span>
+            <h2 style="margin-top:15px;">${metric.label}</h2>
         </div>
         <div class="input-area" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
             ${inputHTML}
         </div>
         <div class="card-footer" style="margin-top:20px;">
-            <button class="skip-btn" onclick="saveEntry('${metric.id}', 0)" style="background:none; border:1px solid #ddd; padding:10px 20px; border-radius:10px; cursor:pointer; color:#888;">לא רלוונטי היום</button>
-            <div style="margin-top:15px; color:#bbb; font-size:0.85rem;">${currentStep + 1} / ${architectConfig.metrics.length}</div>
+            <button class="skip-btn" onclick="saveEntry('${metric.id}', 0)" style="color:#888;">לא רלוונטי היום</button>
+            <div style="margin-top:10px; color:#bbb;">${currentStep + 1} / ${architectConfig.metrics.length}</div>
         </div>
     `;
     container.appendChild(card);
@@ -146,10 +145,7 @@ function updateFeedbackRange(range) {
 
 function renderFeedback() {
     const history = LegacyData.getHistory();
-    if (history.length === 0) {
-        console.warn("לא נמצאה היסטוריה להצגת גרף");
-        return;
-    }
+    if (history.length === 0) return;
 
     let dataPoints = {};
     const latestDay = history[history.length - 1];
@@ -165,10 +161,9 @@ function renderFeedback() {
         architectConfig.metrics.forEach(m => {
             let sum = 0;
             recentDays.forEach(day => sum += (day.entries[m.id] || 0));
-            dataPoints[m.label] = sum / recentDays.length;
+            dataPoints[m.label] = sum / Math.max(1, recentDays.length);
         });
     }
-
     drawRadarChart(dataPoints);
 }
 
@@ -208,49 +203,29 @@ function drawRadarChart(dataPoints) {
 // --- חלק 4: תצוגת האדריכל ---
 function renderArchitectView() {
     const container = document.getElementById('tab-architect');
-    container.innerHTML = `
-        <div style="padding: 10px;">
-            <h2>ניהול האדריכל</h2>
-            <p style="color: #666; font-size: 0.9rem;">כאן מוגדרים המדדים שמרכיבים את ה-Legacy שלך.</p>
-        </div>
-    `;
+    if (!container) return;
+    container.innerHTML = '<h2>ניהול האדריכל</h2>';
 
     architectConfig.metrics.forEach(m => {
         const card = document.createElement('div');
-        card.style = `
-            background: #fff;
-            border-right: 5px solid ${m.isBonus ? '#2ecc71' : '#3498db'};
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            text-align: right;
-        `;
+        card.style = "background:#fff; border-right:5px solid #3498db; margin:10px 0; padding:15px; border-radius:10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align:right;";
         card.innerHTML = `
-            <div style="font-weight: bold; font-size: 1.1rem;">${m.label}</div>
-            <div style="font-size: 0.85rem; color: #777; margin: 4px 0;">תחום: ${m.domain} | משקל: ${m.weight}</div>
-            <div style="font-size: 0.8rem;">
-                סוג קלט: <span style="background: #eee; padding: 2px 6px; border-radius: 4px;">${m.type}</span>
-                ${m.isBonus ? '<span style="color: #2ecc71; margin-right: 10px;">★ בונוס</span>' : ''}
-            </div>
+            <div style="font-weight:bold;">${m.label}</div>
+            <div style="font-size:0.8rem; color:#777;">תחום: ${m.domain} | משקל: ${m.weight}</div>
         `;
         container.appendChild(card);
     });
 
     const adminBox = document.createElement('div');
-    adminBox.style = "margin-top: 30px; padding: 20px; border-top: 2px dashed #ffcccc; background: #fff5f5; border-radius: 10px;";
-    adminBox.innerHTML = `
-        <h4 style="color: #e74c3c; margin-top: 0;">אזור אבטחה</h4>
-        <button onclick="LegacyCloud.secureDeleteAll()" style="background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold;">
-            מחיקת כל הנתונים מהענן
-        </button>
-    `;
+    adminBox.innerHTML = `<button onclick="LegacyCloud.secureDeleteAll()" style="background:#e74c3c; color:white; border:none; padding:12px; border-radius:8px; width:100%; margin-top:20px; cursor:pointer;">מחיקת כל הנתונים מהענן</button>`;
     container.appendChild(adminBox);
 }
 
 // אתחול בטעינה
 window.onload = async () => {
-    console.log("Legacy System: בודק עדכונים בענן...");
     try {
         await LegacyCloud.pullFromCloud();
-        console.log("Legacy System: סנכרון הושלם.");
+    } catch (e) {
+        console.warn("Legacy System: Offline mode.");
+    }
+};
