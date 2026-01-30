@@ -4,6 +4,7 @@ let myRadarChart = null;
 let currentContext = 'normal';
 let currentStep = 0;
 let userEntries = {};
+let myTrendChart = null;
 
 // פונקציית ניווט
 function switchTab(tabId) {
