@@ -27,23 +27,27 @@
                     </div>
                 </div>
             </section>
-            <div id="tab-feedback" class="tab-content">
-            <h2>תשקיף ביצועים</h2>
-            <div class="time-filters" style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button onclick="updateFeedbackRange('today')" class="filter-btn active">היום</button>
-        <button onclick="updateFeedbackRange('week')" class="filter-btn">שבוע</button>
-        <button onclick="updateFeedbackRange('month')" class="filter-btn">חודש</button>
-    </div>
-   <div class="chart-container" style="margin-top: 40px;">
-    <h3>מגמת Legacy (מבט על)</h3>
-    <canvas id="trendChart"></canvas>
-</div>
-    <canvas id="radarChart"></canvas>
-    <div class="chart-box" style="margin-top: 30px; padding: 15px; background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-    <h3 style="text-align: center; color: #2c3e50;">מגמת Legacy (ציר זמן)</h3>
-    <canvas id="trendChart"></canvas>
-</div>
-</div>
+             <div id="tab-feedback" class="tab-content">
+                <h2>תשקיף ביצועים</h2>
+                <div class="time-filters" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                   <button onclick="updateFeedbackRange('today')" class="filter-btn active">היום</button>
+                   <button onclick="updateFeedbackRange('week')" class="filter-btn">שבוע</button>
+                   <button onclick="updateFeedbackRange('month')" class="filter-btn">חודש</button>
+                </div>
+                <div class="chart-container" style="margin-top: 40px;">
+                    <h3>מגמת Legacy (מבט על)</h3>
+                    <canvas id="trendChart"></canvas>
+                </div>
+                  <canvas id="radarChart"></canvas>
+                <div class="chart-box" style="margin-top: 30px; padding: 15px; background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                  <h3 style="text-align: center; color: #2c3e50;">מגמת Legacy (ציר זמן)</h3>
+                  <canvas id="trendChart"></canvas>
+                </div>
+                <div id="strategist-insights" style="margin-top: 25px; padding: 20px; background: #fef9e7; border-radius: 12px; border-right: 5px solid #f1c40f; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                  <h3 style="margin-top:0; color: #b7950b;">דבר האסטרטג 🧠</h3>
+                    <p id="insight-text" style="line-height: 1.6; color: #2c3e50;">מנתח נתונים ומגמות...</p>
+                </div>
+            </div>  
 
             <section id="tab-strategist" class="tab-content"><h2>האסטרטג</h2></section>
             <section id="tab-museum" class="tab-content"><h2>ספריית הישגים</h2></section>
