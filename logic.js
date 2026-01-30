@@ -316,5 +316,40 @@ function renderFeedback() {
         });
     }
 
-    drawRadarChart(dataToShow);
+    let myChart; // משתנה גלובלי כדי שנוכל לעדכן את הגרף
+
+function drawRadarChart(dataPoints) {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    
+    // אם כבר קיים גרף, נמחק אותו לפני ציור חדש (כדי שלא יקפצו גרפים אחד על השני)
+    if (myChart) {
+        myChart.destroy();
+    }
+
+    const labels = Object.keys(dataPoints);
+    const values = Object.values(dataPoints);
+
+    myChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'ביצועי Legacy',
+                data: values,
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                borderColor: 'rgba(52, 152, 219, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 10
+                }
+            }
+        }
+    });
+}
 }
