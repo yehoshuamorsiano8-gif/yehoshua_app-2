@@ -4,18 +4,10 @@ function switchTab(tabId) {
 
     document.getElementById(`tab-${tabId}`).classList.add('active');
     
-    const activeBtn = Array.from(document.querySelectorAll('.nav-item'))
-                           .find(btn => btn.getAttribute('onclick').includes(tabId));
-    if (activeBtn) activeBtn.classList.add('active');
-
-    // ניהול תצוגות מיוחדות
-    if (tabId === 'feedback') {
-        renderFeedback();
-    } else if (tabId === 'architect') {
-        renderArchitectView(); // פונקציה חדשה
-    }
+    // הפעלת פונקציה ספציפית לפי החלונית
+    if (tabId === 'feedback') renderFeedback();
+    if (tabId === 'architect') renderArchitectView(); // הוספנו את זה
 }
-
 // פונקציה חדשה להצגת המדדים בחלונית האדריכל
 function renderArchitectView() {
     const container = document.getElementById('tab-architect');
