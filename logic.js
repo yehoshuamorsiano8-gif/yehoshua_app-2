@@ -349,4 +349,54 @@ function renderStep() {
     const metric = activeMetrics[currentStep];
     // ... המשך פונקציית ה-renderStep כפי שהייתה מקודם ...
 }
+// הוסף את זה בסוף הקובץ logic.js
+
+function runStrategist() {
+    const insightElement = document.getElementById('insight-text');
+    if (!insightElement) return;
+
+    const history = LegacyData.getHistory();
+    
+    // אם אין היסטוריה - מציגים הודעת פתיחה
+    if (history.length === 0) {
+        insightElement.innerHTML = "ברוך הבא, אדריכל. התחל לדווח כדי לקבל תובנות אסטרטגיות.";
+        return;
+    }
+
+    const latest = history[history.length - 1].entries;
+    const metrics = architectConfig.metrics;
+
+    // 1. זיהוי נקודת חוזק
+    let bestMetric = metrics[0];
+    metrics.forEach(m => {
+        if ((latest[m.id] || 0) > (latest[bestMetric.id] || 0)) {
+            bestMetric = m;
+        }
+    });
+
+    // 2. חישוב מגמה
+    let trendMsg = "מנתח נתונים...";
+    if (history.length > 1) {
+        const prev = history[history.length - 2].entries;
+        const calcAvg = (obj) => {
+            const vals = Object.values(obj);
+            return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+        };
+        const diff = (calcAvg(latest) - calcAvg(prev)).toFixed(1);
+        
+        if (diff > 0.5) trendMsg = `📈 המגמה בשיפור! עלייה של ${diff} נקודות.`;
+        else if (diff < -0.5) trendMsg = `📉 ירידה של ${Math.abs(diff)}. מה קרה היום?`;
+        else trendMsg = "📊 המצב יציב. עקביות היא המפתח.";
+    }
+
+    // 3. הצגה למשתמש
+    insightElement.innerHTML = `
+        <div style="margin-bottom: 8px;">
+            <strong>כוכב היום:</strong> ${bestMetric.label} (ציון גבוה).
+        </div>
+        <div>
+            <strong>מגמה:</strong> ${trendMsg}
+        </div>
+    `;
+}
 };
