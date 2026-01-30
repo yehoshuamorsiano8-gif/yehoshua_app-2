@@ -316,29 +316,75 @@ function renderFeedback() {
         });
     }
 
-    let myChart; // משתנה גלובלי כדי שנוכל לעדכן את הגרף
+// משתנה גלובלי לשמירת הגרף - חייב להיות מחוץ לפונקציות
+let myRadarChart = null; 
+let currentRange = 'today';
+
+function updateFeedbackRange(range) {
+    currentRange = range;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.includes(range === 'today' ? 'היום' : range === 'week' ? 'שבוע' : 'חודש'));
+    });
+    renderFeedback();
+}
+
+function renderFeedback() {
+    // מנסה למשוך מהענן, אם אין - מושך מהלוקאל
+    const history = JSON.parse(localStorage.getItem('legacy_history') || localStorage.getItem('legacy_data') || '[]');
+    
+    if (history.length === 0) {
+        console.warn("לא נמצאה היסטוריה להצגת גרף");
+        return;
+    }
+
+    let dataToShow = {};
+
+    if (currentRange === 'today') {
+        // מציג את היום האחרון
+        const latestEntry = history[history.length - 1];
+        // וידוא שהנתונים מגיעים מהמקום הנכון (entries או scores)
+        dataToShow = latestEntry.entries || latestEntry.scores || {};
+    } else {
+        const daysToInclude = currentRange === 'week' ? 7 : 30;
+        const recentDays = history.slice(-daysToInclude);
+        
+        // חישוב ממוצעים לפי דומיין
+        recentDays.forEach(day => {
+            const entries = day.entries || day.scores || {};
+            architectConfig.metrics.forEach(m => {
+                if (!dataToShow[m.label]) dataToShow[m.label] = 0;
+                dataToShow[m.label] += (entries[m.id] || 0) / recentDays.length;
+            });
+        });
+    }
+
+    // הקריאה החשובה ביותר - כאן קורה הציור!
+    drawRadarChart(dataToShow);
+}
 
 function drawRadarChart(dataPoints) {
-    const ctx = document.getElementById('radarChart').getContext('2d');
+    const canvas = document.getElementById('radarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     
-    // אם כבר קיים גרף, נמחק אותו לפני ציור חדש (כדי שלא יקפצו גרפים אחד על השני)
-    if (myChart) {
-        myChart.destroy();
+    if (myRadarChart) {
+        myRadarChart.destroy();
     }
 
     const labels = Object.keys(dataPoints);
     const values = Object.values(dataPoints);
 
-    myChart = new Chart(ctx, {
+    myRadarChart = new Chart(ctx, {
         type: 'radar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'ביצועי Legacy',
+                label: `ביצועי Legacy (${currentRange})`,
                 data: values,
                 backgroundColor: 'rgba(52, 152, 219, 0.2)',
                 borderColor: 'rgba(52, 152, 219, 1)',
-                borderWidth: 2
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(52, 152, 219, 1)'
             }]
         },
         options: {
@@ -346,7 +392,8 @@ function drawRadarChart(dataPoints) {
                 r: {
                     angleLines: { display: true },
                     suggestedMin: 0,
-                    suggestedMax: 10
+                    suggestedMax: 10,
+                    ticks: { stepSize: 2 }
                 }
             }
         }
