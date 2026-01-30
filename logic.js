@@ -146,33 +146,27 @@ function updateFeedbackRange(range) {
 
 function renderFeedback() {
     const history = LegacyData.getHistory();
-    if (history.length === 0) return;
-
-    let dataPoints = {};
-    const latestDay = history[history.length - 1];
-
-    if (currentRange === 'today') {
-        architectConfig.metrics.forEach(m => {
-            dataPoints[m.label] = latestDay.entries[m.id] || 0;
-        });
-    } else {
-        const daysToInclude = currentRange === 'week' ? 7 : 30;
-        const recentDays = history.slice(-daysToInclude);
-        
-        architectConfig.metrics.forEach(m => {
-            let sum = 0;
-            recentDays.forEach(day => sum += (day.entries[m.id] || 0));
-            dataPoints[m.label] = sum / Math.max(1, recentDays.length);
-        });
+    if (history.length === 0) {
+        console.warn("אין נתונים להצגת גרפים");
+        return;
     }
-    drawRadarChart(dataPoints);
+
+    // 1. הכנת נתונים לגרף עכביש (היום האחרון)
+    let radarData = {};
+    const latestDay = history[history.length - 1];
+    architectConfig.metrics.forEach(m => {
+        radarData[m.label] = latestDay.entries[m.id] || 0;
+    });
+    drawRadarChart(radarData);
+
+    // 2. הכנת נתונים לגרף מגמה (כל ההיסטוריה)
+    drawTrendChart(history);
 }
 
 function drawRadarChart(dataPoints) {
     const canvas = document.getElementById('radarChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
     if (myRadarChart) myRadarChart.destroy();
 
     myRadarChart = new Chart(ctx, {
@@ -180,23 +174,56 @@ function drawRadarChart(dataPoints) {
         data: {
             labels: Object.keys(dataPoints),
             datasets: [{
-                label: `ביצועי Legacy (${currentRange})`,
+                label: 'Snapshot יומי',
                 data: Object.values(dataPoints),
                 backgroundColor: 'rgba(52, 152, 219, 0.2)',
                 borderColor: '#3498db',
-                borderWidth: 2,
-                pointBackgroundColor: '#3498db'
+                borderWidth: 2
+            }]
+        },
+        options: {
+            scales: { r: { min: 0, max: 10, ticks: { display: false } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function drawTrendChart(history) {
+    const canvas = document.getElementById('trendChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (myTrendChart) myTrendChart.destroy();
+
+    // הכנת התוויות (תאריכים) והערכים (ממוצע יומי)
+    const labels = history.map(day => day.date);
+    const dataValues = history.map(day => {
+        const scores = Object.values(day.entries);
+        const sum = scores.reduce((a, b) => a + b, 0);
+        return (sum / scores.length).toFixed(1); // ממוצע יומי
+    });
+
+    myTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Legacy Score',
+                data: dataValues,
+                borderColor: '#2ecc71', // ירוק "מניות"
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                fill: true,
+                tension: 0.4, // קו מעוגל ויפה
+                borderWidth: 3,
+                pointRadius: 4
             }]
         },
         options: {
             scales: {
-                r: {
-                    min: 0,
-                    max: 10,
-                    ticks: { stepSize: 2, display: false }
-                }
+                y: { min: 0, max: 10 }
             },
-            plugins: { legend: { display: false } }
+            plugins: {
+                legend: { display: false }
+            }
         }
     });
 }
