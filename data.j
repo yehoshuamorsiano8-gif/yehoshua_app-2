@@ -11,9 +11,9 @@ const LegacyData = {
         };
 
         // שליפת נתונים קיימים
-        let history = JSON.parse(localStorage.getItem('legacy_history')) || [];
+        let history = this.getHistory();
         
-        // מניעת כפילויות (אם כבר קיים דיווח להיום - נעדכן אותו)
+        // מניעת כפילויות (עדכון רשומה קיימת לאותו תאריך)
         const existingIndex = history.findIndex(d => d.date === date);
         if (existingIndex > -1) {
             history[existingIndex] = dayRecord;
@@ -23,7 +23,6 @@ const LegacyData = {
         
         // שמירה חזרה ל-LocalStorage
         localStorage.setItem('legacy_history', JSON.stringify(history));
-        console.log("נתונים נשמרו מקומית:", dayRecord);
         return dayRecord;
     },
 
@@ -35,7 +34,7 @@ const LegacyData = {
         architectConfig.metrics.forEach(metric => {
             const val = entries[metric.id] || 0;
             
-            // קבלת המשקל הדינמי (מושפע מבלת"מים/מחלה)
+            // קריאה לפונקציה מהאדריכל (וידוא שם תקין: getDynamicWeight)
             const dynamicWeight = getDynamicWeight(metric.id, context);
 
             if (dynamicWeight > 0) {
@@ -43,10 +42,13 @@ const LegacyData = {
                 
                 // חישוב לפי סוג המדד
                 if (metric.type === 'v') {
-                    performance = val; // 1 או 0
+                    performance = val ? 1 : 0; 
                 } else if (metric.type === 'slider' || metric.type === 'stepper') {
                     const max = metric.max || 10;
-                    performance = Math.min(val / max, 1); // נירמול לערך בין 0 ל-1
+                    const min = metric.min || 0;
+                    // נירמול הערך לטווח של 0 עד 1
+                    performance = (val - min) / (max - min);
+                    performance = Math.max(0, Math.min(performance, 1)); 
                 }
 
                 totalWeightedScore += (performance * dynamicWeight);
@@ -58,10 +60,14 @@ const LegacyData = {
         return totalWeights > 0 ? Math.round((totalWeightedScore / totalWeights) * 100) : 0;
     },
 
-    // שליפת ההיסטוריה לגרפים
+    // שליפת ההיסטוריה לגרפים בצורה בטוחה
     getHistory: function() {
-        const history = JSON.parse(localStorage.getItem('legacy_history')) || [];
-        // מיון לפי זמן כדי שהגרף יהיה כרונולוגי
-        return history.sort((a, b) => a.timestamp - b.timestamp);
+        try {
+            const history = JSON.parse(localStorage.getItem('legacy_history')) || [];
+            return history.sort((a, b) => a.timestamp - b.timestamp);
+        } catch (e) {
+            console.error("שגיאה בקריאת היסטוריה:", e);
+            return [];
+        }
     }
 };

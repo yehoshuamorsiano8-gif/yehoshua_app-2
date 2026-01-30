@@ -39,9 +39,11 @@ const architectConfig = {
 };
 
 // פונקציה לחישוב משקל דינמי לפי ההקשר היומי
-function getDynamicWeight(metricId, context) {
+function getDynamicWeight(metricId, context) { // תיקון שם הפונקציה
     const metric = architectConfig.metrics.find(m => m.id === metricId);
-    const modeConfig = architectConfig.lifeModes[context];
+    if (!metric) return 0; // הגנה למקרה שלא נמצא מדד
+
+    const modeConfig = architectConfig.lifeModes[context] || architectConfig.lifeModes['normal'];
     
     let finalWeight = metric.weight;
 

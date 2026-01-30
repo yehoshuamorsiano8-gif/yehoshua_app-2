@@ -38,7 +38,15 @@
 
             <section id="tab-strategist" class="tab-content"><h2>האסטרטג</h2></section>
             <section id="tab-museum" class="tab-content"><h2>ספריית הישגים</h2></section>
-            <section id="tab-architect" class="tab-content"><h2>האדריכל</h2></section>
+            
+            <section id="tab-architect" class="tab-content">
+                <h2>האדריכל</h2>
+                <div class="admin-controls" style="margin-top: 50px; padding: 20px; border: 1px dashed red;">
+                    <h3>ניהול נתונים מאובטח</h3>
+                    <p style="font-size: 0.8rem;">מחיקת נתונים היא פעולה בלתי הפיכה.</p>
+                    <button onclick="LegacyCloud.secureDeleteAll()" style="background: #e74c3c; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">מחיקת כל הנתונים מהענן</button>
+                </div>
+            </section>
         </main>
 
         <nav id="bottom-nav">
@@ -50,8 +58,9 @@
         </nav>
     </div>
 
-    <script src="data.js"></script>
     <script src="architect.js"></script>
-    <script src="cloud.js"></script> <script src="logic.js"></script>
+    <script src="data.js"></script>
+    <script src="cloud.js"></script> 
+    <script src="logic.js"></script>
 </body>
 </html>
