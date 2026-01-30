@@ -27,14 +27,15 @@
                     </div>
                 </div>
             </section>
-
-            <section id="tab-feedback" class="tab-content">
-                <h2>תשקיף אישיות</h2>
-                <div style="width: 100%; max-width: 500px; margin: auto;">
-                    <canvas id="radarChart"></canvas>
-                </div>
-                <div id="weekly-stats"></div>
-            </section>
+            <div id="tab-feedback" class="tab-content">
+    <h2>תשקיף ביצועים</h2>
+    <div class="time-filters" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button onclick="updateFeedbackRange('today')" class="filter-btn active">היום</button>
+        <button onclick="updateFeedbackRange('week')" class="filter-btn">שבוע</button>
+        <button onclick="updateFeedbackRange('month')" class="filter-btn">חודש</button>
+    </div>
+    <canvas id="radarChart"></canvas>
+</div>
 
             <section id="tab-strategist" class="tab-content"><h2>האסטרטג</h2></section>
             <section id="tab-museum" class="tab-content"><h2>ספריית הישגים</h2></section>
